@@ -8,6 +8,8 @@ endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall  -O3 -march=native")
 
+add_compile_options(-std=c++14)
+
 set(HDRS_DBOW2
   DBoW2/BowVector.h
   DBoW2/FORB.h 
@@ -28,8 +30,10 @@ set(SRCS_DUTILS
   DUtils/Random.cpp
   DUtils/Timestamp.cpp)
 
+set(cv_bridge_DIR "/home/tioeare/cvbridge_build_ws/devel/share/cv_bridge/cmake")
+set(OpenCV_DIR /usr/local/share/opencv4)
 
-find_package(OpenCV 4 QUIET)
+find_package(OpenCV 4.5.5 REQUIRED)
 if(NOT OpenCV_FOUND)
    find_package(OpenCV 3.0 QUIET)
    if(NOT OpenCV_FOUND)

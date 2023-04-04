@@ -22,11 +22,11 @@
 
 
 #include <unistd.h>
-#include<stdio.h>
-#include<stdlib.h>
-#include<string>
-#include<thread>
-#include<opencv2/core/core.hpp>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string>
+#include <thread>
+#include <opencv2/core/core.hpp>
 
 #include "Tracking.h"
 #include "FrameDrawer.h"
@@ -107,6 +107,7 @@ public:
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
+    /// 返回相机位姿
     Sophus::SE3f TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const vector<IMU::Point>& vImuMeas = vector<IMU::Point>(), string filename="");
 
     // Process the given rgbd frame. Depthmap must be registered to the RGB frame.
@@ -122,21 +123,25 @@ public:
 
 
     // This stops local mapping thread (map building) and performs only camera tracking.
+    /// 停止建图, 只用于跟踪
     void ActivateLocalizationMode();
     // This resumes local mapping thread and performs SLAM again.
     void DeactivateLocalizationMode();
 
     // Returns true if there have been a big map change (loop closure, global BA)
     // since last call to this function
+    /// 回环或全局BA
     bool MapChanged();
 
     // Reset the system (clear Atlas or the active map)
+    /// 重置地图
     void Reset();
     void ResetActiveMap();
 
     // All threads will be requested to finish.
     // It waits until all threads have finished.
     // This function must be called before saving the trajectory.
+    /// 保存轨迹前等待所有线程完成
     void Shutdown();
     bool isShutDown();
 
@@ -144,12 +149,14 @@ public:
     // Only for stereo and RGB-D. This method does not work for monocular.
     // Call first Shutdown()
     // See format details at: http://vision.in.tum.de/data/datasets/rgbd-dataset
+    /// 保存相机轨迹为TUM格式
     void SaveTrajectoryTUM(const string &filename);
 
     // Save keyframe poses in the TUM RGB-D dataset format.
     // This method works for all sensor input.
     // Call first Shutdown()
     // See format details at: http://vision.in.tum.de/data/datasets/rgbd-dataset
+    /// 保存关键帧位姿为TUM格式, 保存前先shutdown()
     void SaveKeyFrameTrajectoryTUM(const string &filename);
 
     void SaveTrajectoryEuRoC(const string &filename);
@@ -181,9 +188,12 @@ public:
     double GetTimeFromIMUInit();
     bool isLost();
     bool isFinished();
+    bool is_key_frame;
+    bool is_loop;
+    long unsigned int current_KF_mnId;
+    vector<KeyFrame *> current_all_KF;
 
     void ChangeDataset();
-
     float GetImageScale();
 
 #ifdef REGISTER_TIMES
@@ -206,22 +216,26 @@ private:
     ORBVocabulary* mpVocabulary;
 
     // KeyFrame database for place recognition (relocalization and loop detection).
+    /// 关键帧数据集, 用于重定位和回环
     KeyFrameDatabase* mpKeyFrameDatabase;
 
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
-    //Map* mpMap;
+    // Map* mpMap;
     Atlas* mpAtlas;
 
     // Tracker. It receives a frame and computes the associated camera pose.
     // It also decides when to insert a new keyframe, create some new MapPoints and
     // performs relocalization if tracking fails.
+    /// 接受图像, 计算相机位姿, 决定插入关键帧, 创建新的路标点, 如果追踪失败执行重定位
     Tracking* mpTracker;
 
     // Local Mapper. It manages the local map and performs local bundle adjustment.
+    /// 地图管理器, 局部BA
     LocalMapping* mpLocalMapper;
 
     // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
-    // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
+    // a pose graph optimization and full bundle adjustment (in a new thread) afterward.
+    /// 回环检测, 检测每一帧是否回环, 如果回环则新建线程进行全局BA
     LoopClosing* mpLoopCloser;
 
     // The viewer draws the map and the current camera pose. It uses Pangolin.
@@ -255,7 +269,6 @@ private:
     std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
     std::mutex mMutexState;
 
-    //
     string mStrLoadAtlasFromFile;
     string mStrSaveAtlasToFile;
 
