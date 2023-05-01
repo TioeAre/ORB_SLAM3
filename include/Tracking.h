@@ -107,8 +107,8 @@ namespace ORB_SLAM3 {
 #endif
 
     public:
-        bool is_key_frame = false;
         bool is_loop = false;
+        std::mutex is_loop_mutex;
         // Tracking states
         enum eTrackingState {
             SYSTEM_NOT_READY = -1,

@@ -1965,9 +1965,7 @@ void Tracking::PrintTimeStats()
                                         (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO ||
                                          mSensor == System::IMU_RGBD)))) {
                     CreateNewKeyFrame();
-                    is_key_frame = true;
                 } else {
-                    is_key_frame = false;
                 }
 
 #ifdef REGISTER_TIMES
@@ -2139,7 +2137,7 @@ void Tracking::PrintTimeStats()
             mvpLocalMapPoints = mpAtlas->GetAllMapPoints();
             mpReferenceKF = pKFini;
             mCurrentFrame.mpReferenceKF = pKFini;
-
+///添加地图点
             mpAtlas->SetReferenceMapPoints(mvpLocalMapPoints);
 
             mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.push_back(pKFini);

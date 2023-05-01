@@ -359,15 +359,19 @@ namespace ORB_SLAM3 {
                 mpTracker->GrabImuData(vImuMeas[i_imu]);
 
         Sophus::SE3f Tcw = mpTracker->GrabImageRGBD(imToFeed, imDepthToFeed, timestamp, filename);
-
-        is_key_frame = mpTracker->is_key_frame;
-        if (is_key_frame) current_KF_mnId = mpTracker->mCurrentFrame.mnId;
+        is_key_frame = false;
+        is_key_frame = mpLocalMapper->is_key_frame;
         is_loop = false;
         is_loop = mpTracker->is_loop;
         current_all_KF = mpAtlas->GetAllKeyFrames();
-        sort(current_all_KF.begin(),current_all_KF.end(),KeyFrame::lId);
-        if (is_loop){
-            mpTracker->is_loop = false; //本来应该加线程锁，但是应该几乎不会出现这种错误，除非算力低到5秒一帧
+        if (is_key_frame) current_KF_mnId = mpLocalMapper->GetCurrKF()->mnId;
+        if (mpTracker->is_loop) {
+            std::unique_lock<std::mutex> lock_loop(mpTracker->is_loop_mutex);
+            mpTracker->is_loop = false;
+        }
+        if (mpLocalMapper->is_key_frame) {
+            std::unique_lock<std::mutex> lock_kf(mpLocalMapper->is_keyframe_mutex);
+            mpLocalMapper->is_key_frame = false;
         }
         unique_lock<mutex> lock2(mMutexState);
         mTrackingState = mpTracker->mState;

@@ -92,7 +92,6 @@ namespace ORB_SLAM3 {
         mbFinished = false;
 
         while (1) {
-            mpTracker->is_loop = false;
             //NEW LOOP AND MERGE DETECTION ALGORITHM
             //----------------------------
             if (CheckNewKeyFrames()) {
@@ -211,7 +210,6 @@ namespace ORB_SLAM3 {
 
                     if (mbLoopDetected) {
                         bool bGoodLoop = true;
-                        mpTracker->is_loop = true;
                         vdPR_CurrentTime.push_back(mpCurrentKF->mTimeStamp);
                         vdPR_MatchedTime.push_back(mpLoopMatchedKF->mTimeStamp);
                         vnPR_TypeRecogn.push_back(0);
@@ -267,7 +265,10 @@ namespace ORB_SLAM3 {
 
                             mnNumCorrection += 1;
                         }
-
+                        {
+                            std::unique_lock<std::mutex> lock_loop(mpTracker->is_loop_mutex);
+                            mpTracker->is_loop = true;
+                        }
                         // Reset all variables
                         mpLoopLastCurrentKF->SetErase();
                         mpLoopMatchedKF->SetErase();

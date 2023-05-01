@@ -78,6 +78,10 @@ namespace ORB_SLAM3 {
 #endif
                 // BoW conversion and insertion in Map
                 ProcessNewKeyFrame();
+                {
+                    std::unique_lock<std::mutex> lock_kf(is_keyframe_mutex);
+                    is_key_frame = true;
+                }
 #ifdef REGISTER_TIMES
                 std::chrono::steady_clock::time_point time_EndProcessKF = std::chrono::steady_clock::now();
 
@@ -315,7 +319,7 @@ namespace ORB_SLAM3 {
 
         // Update links in the Covisibility Graph
         mpCurrentKeyFrame->UpdateConnections();
-
+        ///加入的关键帧并不一定是最新的关键帧
         // Insert Keyframe in Map
         mpAtlas->AddKeyFrame(mpCurrentKeyFrame);
     }

@@ -42,6 +42,8 @@ namespace ORB_SLAM3 {
 
     class LocalMapping {
     public:
+        bool is_key_frame = false;
+        std::mutex is_keyframe_mutex;
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
         LocalMapping(System *pSys, Atlas *pAtlas, const float bMonocular, bool bInertial,

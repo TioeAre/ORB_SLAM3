@@ -1,50 +1,47 @@
 /**
-* This file is part of ORB-SLAM3
-*
-* Copyright (C) 2017-2021 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-* Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
-*
-* ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
-* License as published by the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
-* the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with ORB-SLAM3.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
-
-
-#include<iostream>
-#include<chrono>
-
-#include <ros/ros.h>
-#include <ros/spinner.h>
-#include <std_msgs/Bool.h>
-#include <sensor_msgs/Image.h>
-#include <nav_msgs/Path.h>
-#include <nav_msgs/Odometry.h>
-#include <tf/transform_broadcaster.h>
+ * This file is part of ORB-SLAM3
+ *
+ * Copyright (C) 2017-2021 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós,
+ * University of Zaragoza. Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of
+ * Zaragoza.
+ *
+ * ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * ORB-SLAM3 is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with ORB-SLAM3.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <cv_bridge/cv_bridge.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
+#include <ros/ros.h>
+#include <ros/spinner.h>
+#include <sensor_msgs/Image.h>
+#include <std_msgs/Bool.h>
+#include <tf/transform_broadcaster.h>
 
+#include <chrono>
+#include <iostream>
 #include <opencv2/core/core.hpp>
 
-#include"../../../include/System.h"
+#include "../../include/System.h"
 
 using namespace std;
 
-vector<unsigned long> key_frame_id;
-
 class ImageGrabber {
 public:
+    vector<unsigned long> key_frame_ids;
+    uint32_t pub_id = 0;
     ros::NodeHandle nh1;
     ros::Publisher pub_rgb, pub_depth, pub_tcw, pub_camerapath, pub_odom, pub_isLoop;
-    size_t mcounter = 0;
     nav_msgs::Path camerapath;
 
     ImageGrabber(ORB_SLAM3::System *pSLAM) : mpSLAM(pSLAM), nh1("~") {
@@ -97,19 +94,18 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-tf::Pose trans_pose(Sophus::SE3f se3, bool& if_empty) {
-    cv::Mat Tcw = (cv::Mat_<float>(4, 4) <<
-                                         se3.matrix()(0, 0), se3.matrix()(0, 1), se3.matrix()(0, 2), se3.matrix()(0, 3),
-            se3.matrix()(1, 0), se3.matrix()(1, 1), se3.matrix()(1, 2), se3.matrix()(1, 3),
-            se3.matrix()(2, 0), se3.matrix()(2, 1), se3.matrix()(2, 2), se3.matrix()(2, 3),
-            0.0f, 0.0f, 0.0f, 1.0f);
+tf::Pose trans_pose(Sophus::SE3f se3, bool &if_empty) {
+    cv::Mat Tcw =
+        (cv::Mat_<float>(4, 4) << se3.matrix()(0, 0), se3.matrix()(0, 1), se3.matrix()(0, 2), se3.matrix()(0, 3),
+         se3.matrix()(1, 0), se3.matrix()(1, 1), se3.matrix()(1, 2), se3.matrix()(1, 3), se3.matrix()(2, 0),
+         se3.matrix()(2, 1), se3.matrix()(2, 2), se3.matrix()(2, 3), 0.0f, 0.0f, 0.0f, 1.0f);
     if_empty = Tcw.empty();
     cv::Mat RWC = Tcw.rowRange(0, 3).colRange(0, 3);
     cv::Mat tWC = Tcw.rowRange(0, 3).col(3);
-    tf::Matrix3x3 M(RWC.at<float>(0, 0), RWC.at<float>(0, 1), RWC.at<float>(0, 2),
-                    RWC.at<float>(1, 0), RWC.at<float>(1, 1), RWC.at<float>(1, 2),
-                    RWC.at<float>(2, 0), RWC.at<float>(2, 1), RWC.at<float>(2, 2));
-    tf::Vector3 V(tWC.at<float>(0), tWC.at<float>(1), tWC.at<float>(2));
+    tf::Matrix3x3 M(RWC.at<float>(0, 0), RWC.at<float>(0, 1), RWC.at<float>(0, 2), RWC.at<float>(1, 0),
+                    RWC.at<float>(1, 1), RWC.at<float>(1, 2), RWC.at<float>(2, 0), RWC.at<float>(2, 1),
+                    RWC.at<float>(2, 2));
+    tf::Vector3 V(tWC.at<float>(0) / 25, tWC.at<float>(1) / 25, tWC.at<float>(2) / 25);
     tf::Quaternion q;
     M.getRotation(q);
     tf::Pose tf_pose(q, V);
@@ -124,8 +120,7 @@ void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr &msgRGB, const sens
     cv_bridge::CvImageConstPtr cv_ptrRGB;
     try {
         cv_ptrRGB = cv_bridge::toCvShare(msgRGB, sensor_msgs::image_encodings::BGR8);
-    }
-    catch (cv_bridge::Exception &e) {
+    } catch (cv_bridge::Exception &e) {
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
@@ -133,8 +128,7 @@ void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr &msgRGB, const sens
     cv_bridge::CvImageConstPtr cv_ptrD;
     try {
         cv_ptrD = cv_bridge::toCvShare(msgD);
-    }
-    catch (cv_bridge::Exception &e) {
+    } catch (cv_bridge::Exception &e) {
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
@@ -147,7 +141,6 @@ void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr &msgRGB, const sens
         header.stamp = msgRGB->header.stamp;
         header.seq = msgRGB->header.seq;
         header.frame_id = "camera";
-        //cout<<"depth type: "<< depth. type()<<endl;
         sensor_msgs::Image::ConstPtr rgb_msg = msgRGB;
         sensor_msgs::Image::ConstPtr depth_msg = msgD;
 
@@ -156,35 +149,37 @@ void ImageGrabber::GrabRGBD(const sensor_msgs::ImageConstPtr &msgRGB, const sens
         tf::poseTFToMsg(tf_pose, tcw_msg.pose);
 
         camerapath.header = header;
-        camerapath.poses.push_back(tcw_msg);
         std_msgs::Bool isLoop_msg;
         isLoop_msg.data = mpSLAM->is_loop;
         if (mpSLAM->is_loop) {
-            pub_isLoop.publish(isLoop_msg);
             vector<geometry_msgs::PoseStamped> after_loop_poses;
-            for(int i = 0; i < key_frame_id.size(); i++){
-                for(auto&& it : mpSLAM->current_all_KF){
-                    if(key_frame_id[i] == it->mnId){
-                        tf::Pose tf_pose = trans_pose(it->GetPose(), if_empty);
+            vector<unsigned long> after_loop_ids;
+            for (long i = 0; i < mpSLAM->current_all_KF.size(); i++) {
+                for (long j = 0; j < key_frame_ids.size(); j++) {
+                    if (key_frame_ids[j] == mpSLAM->current_all_KF[i]->mnId) {
+                        tf_pose = trans_pose(mpSLAM->current_all_KF[i]->GetPose(), if_empty);
+                        geometry_msgs::PoseStamped tcw_msg1;
+                        tf::poseTFToMsg(tf_pose, tcw_msg1.pose);
+                        tcw_msg1.header = header;
+                        tcw_msg1.header.seq = i;
+                        after_loop_poses.push_back(tcw_msg1);
+                        after_loop_ids.push_back(key_frame_ids[j]);
                         break;
                     }
                 }
-                if (if_empty) continue;
-                geometry_msgs::PoseStamped tcw_msg;
-                tcw_msg.header = header;
-                tf::poseTFToMsg(tf_pose, tcw_msg.pose);
-                after_loop_poses.push_back(tcw_msg);
             }
             camerapath.poses.swap(after_loop_poses);
+            key_frame_ids.swap(after_loop_ids);
         }
-        pub_camerapath.publish(camerapath);  //相机轨迹
+        if (bool(isLoop_msg.data)) {
+            pub_isLoop.publish(isLoop_msg);
+        }
         if (mpSLAM->is_key_frame) {
-            key_frame_id.push_back(mpSLAM->current_KF_mnId);
+            key_frame_ids.push_back(mpSLAM->current_KF_mnId);
+            pub_camerapath.publish(camerapath);
             pub_tcw.publish(tcw_msg);
             pub_rgb.publish(rgb_msg);
             pub_depth.publish(depth_msg);
         }
     }
 }
-
-
