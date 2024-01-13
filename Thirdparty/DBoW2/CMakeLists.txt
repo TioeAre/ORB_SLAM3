@@ -30,14 +30,14 @@ set(SRCS_DUTILS
   DUtils/Random.cpp
   DUtils/Timestamp.cpp)
 
-set(cv_bridge_DIR "/home/tioeare/cvbridge_build_ws/devel/share/cv_bridge/cmake")
-set(OpenCV_DIR /usr/local/share/opencv4)
+# set(cv_bridge_DIR "~/cvbridge_build_ws/devel/share/cv_bridge/cmake")
+# set(OpenCV_DIR /usr/local/share/opencv4)
 
-find_package(OpenCV 4.5.5 REQUIRED)
+find_package(OpenCV 4 REQUIRED)
 if(NOT OpenCV_FOUND)
-   find_package(OpenCV 3.0 QUIET)
+   find_package(OpenCV 4 QUIET)
    if(NOT OpenCV_FOUND)
-      message(FATAL_ERROR "OpenCV > 3.0 not found.")
+      message(FATAL_ERROR "OpenCV > 4 not found.")
    endif()
 endif()
 
