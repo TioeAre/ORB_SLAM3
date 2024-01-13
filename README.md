@@ -1,5 +1,7 @@
-这个仓库是我在最开始学习orbslam时为实现稠密建图添加的很少一部分修改，与[orb_slam3_pcl_mapping](https://github.com/TioeAre/orb_slam3_pcl_mapping)配套使用。
+这个仓库是我在最开始学习orbslam时为实现稠密建图添加的很少一部分修改, 与[orb_slam3_pcl_mapping](https://github.com/TioeAre/orb_slam3_pcl_mapping)配套使用
 阅读源码可以参考计算机视觉life的[ORB_SLAM3_detailed_comments](https://github.com/electech6/详细ORB_SLAM3_detailed_comments)详细注释版
+
+`注意`本仓库中`Examples/ROS/ORB_SLAM3/ORBvoc.txt`由于文件大小138.52MB超过gitHub限制无法上传请参考[下文](#4-running-orb-slam3-with-your-camera), 将`Vocabulary/ORBvoc.txt.tar.gz`解压后复制到`Examples/ROS/ORB_SLAM3/ORBvoc.txt`再运行代码
 
 # ORB-SLAM3
 
